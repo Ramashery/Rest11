@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aquarella | Премиум итальянская кухня</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        :root {
+            --primary: #f0f9ff;
+            --secondary: #fff5f5;
+            --accent: #d4b483;
+            --text: #2a2a2a;
+            --text-light: #5a5a5a;
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--text);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3, h4, h5 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 600;
+        }
+
+        section {
+            padding: 80px 5%;
+            position: relative;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), 
+                        url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
+            background-size: cover;
+            z-index: -2;
+            transform: scale(1.1);
+            transition: transform 0.5s ease;
+        }
+
+        .watercolor-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(230, 247, 255, 0.3), rgba(255, 245, 245, 0.3));
+            z-index: -1;
+        }
+
+        .hero-content {
+            text-align: center;
+            z-index: 2;
+            padding: 20px;
+            max-width: 800px;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            margin-bottom: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .hero-title span {
+            display: inline-block;
+            transform: translateY(100%);
+            opacity: 0;
+            animation: textReveal 1s forwards;
+            animation-delay: calc(0.1s * var(--i));
+        }
+
+        @keyframes textReveal {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            font-weight: 300;
+            margin-bottom: 30px;
+            opacity: 0;
+            animation: fadeIn 1s 1.2s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .scroll-down {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+            opacity: 0;
+            animation-delay: 1.5s;
+            animation-fill-mode: forwards;
+            color: white;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+            40% { transform: translateX(-50%) translateY(-20px); }
+            60% { transform: translateX(-50%) translateY(-10px); }
+        }
+
+        /* About Section */
+        .about {
+            background: linear-gradient(to bottom, var(--primary), var(--secondary));
+            text-align: center;
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            margin-bottom: 60px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: var(--accent);
+        }
+
+        .about-content {
+            max-width: 800px;
+            margin: 0 auto;
+            font-size: 1.1rem;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s, transform 0.6s;
+        }
+
+        .about-content.appear {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Menu Section */
+        .menu {
+            background: var(--secondary);
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .menu-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            height: 380px;
+            transition: transform 0.6s;
+        }
+
+        .menu-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .menu-card:hover .menu-card-inner {
+            transform: rotateY(20deg);
+        }
+
+        .menu-card-front, .menu-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+        }
+
+        .menu-card-front {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .menu-img {
+            height: 250px;
+            background-size: cover;
+            background-position: center;
+            transition: transform 0.5s;
+        }
+
+        .menu-info {
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .menu-name {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+        }
+
+        .menu-price {
+            font-size: 1.2rem;
+            color: var(--accent);
+            font-weight: 500;
+            margin-top: auto;
+        }
+
+        .view-details {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 8px 20px;
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .view-details:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .menu-card-back {
+            background: white;
+            transform: rotateY(180deg);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .menu-details-title {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .menu-details-desc {
+            margin-bottom: 15px;
+            color: var(--text-light);
+        }
+
+        .ingredients {
+            margin-bottom: 20px;
+        }
+
+        .ingredients h4 {
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .ingredients-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .ingredient {
+            background: var(--primary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .close-details {
+            align-self: flex-start;
+            background: transparent;
+            border: none;
+            color: var(--accent);
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Gallery Section */
+        .gallery {
+            background: var(--primary);
+        }
+
+        .masonry-grid {
+            columns: 3;
+            column-gap: 20px;
+            margin-top: 40px;
+        }
+
+        .gallery-item {
+            break-inside: avoid;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transform: scale(1);
+            transition: transform 0.3s;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: transform 0.5s;
+        }
+
+        .gallery-item:hover img {
+            transform: scale(1.05);
+        }
+
+        /* Lightbox */
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .lightbox.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .lightbox-content {
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        .lightbox-content img {
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: 10px;
+        }
+
+        .close-lightbox {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+
+        /* Map Section */
+        .location {
+            padding: 0;
+            height: 500px;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--text);
+            color: white;
+            padding: 40px 5%;
+            text-align: center;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .portfolio-credit {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* Contact Buttons */
+        .contact-buttons {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 100;
+        }
+
+        .contact-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s;
+            position: relative;
+            overflow: hidden;
+            border: none;
+            cursor: pointer;
+        }
+
+        .contact-button:hover {
+            transform: translateY(-5px);
+        }
+
+        .contact-button::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 60%);
+            opacity: 0;
+            animation: pulse 10s infinite;
+        }
+
+        .contact-button.whatsapp::after {
+            animation-delay: 0s;
+        }
+
+        .contact-button.telegram::after {
+            animation-delay: 5s;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0; transform: scale(0.5); }
+            5% { opacity: 1; }
+            10% { opacity: 0; transform: scale(1); }
+            100% { opacity: 0; }
+        }
+
+        .contact-button img {
+            width: 30px;
+            height: 30px;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            transition: background 0.3s, padding 0.3s;
+        }
+
+        nav.scrolled {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            padding: 15px 5%;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text);
+            font-weight: 500;
+            position: relative;
+            padding: 5px 0;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent);
+            transition: width 0.3s;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .masonry-grid {
+                columns: 2;
+            }
+            
+            .menu-grid {
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            }
+        }
+
+        @media (max-width: 600px) {
+            .masonry-grid {
+                columns: 1;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .contact-buttons {
+                bottom: 20px;
+                right: 20px;
+            }
+            
+            .contact-button {
+                width: 50px;
+                height: 50px;
+            }
+            
+            section {
+                padding: 60px 5%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">Aquarella</div>
+        <div class="nav-links">
+            <a href="#about">О нас</a>
+            <a href="#menu">Меню</a>
+            <a href="#gallery">Галерея</a>
+            <a href="#location">Расположение</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-bg" id="hero-bg"></div>
+        <div class="watercolor-overlay"></div>
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <span style="--i:1">A</span>
+                <span style="--i:2">q</span>
+                <span style="--i:3">u</span>
+                <span style="--i:4">a</span>
+                <span style="--i:5">r</span>
+                <span style="--i:6">e</span>
+                <span style="--i:7">l</span>
+                <span style="--i:8">l</span>
+                <span style="--i:9">a</span>
+            </h1>
+            <p class="hero-subtitle">Аутентичная итальянская кухня в сердце Тбилиси</p>
+        </div>
+        <div class="scroll-down">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12l7 7 7-7"></path>
+            </svg>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about">
+        <div class="container">
+            <h2 class="section-title">Наша история</h2>
+            <div class="about-content">
+                <p>Расположенный на оживленных улицах Тбилиси, ресторан Aquarella привносит аутентичные итальянские вкусы в Грузию. Наша страсть к традиционной итальянской кухне отражается в каждом блюде, которое мы создаем, используя только лучшие ингредиенты от местных производителей и непосредственно из Италии.</p>
+                <br>
+                <p>Основанный в 2015 году шеф-поваром Марко Бьянки, Aquarella стал кулинарным направлением для тех, кто ищет элегантные гастрономические впечатления. Наша теплая, привлекательная атмосфера в сочетании с безупречным сервисом создает идеальную обстановку для любого случая.</p>
+                <br>
+                <p>В Aquarella мы верим, что ужин — это не просто питание, а форма искусства, которая затрагивает все чувства. Каждое блюдо тщательно создано, чтобы подарить незабываемые впечатления, которые перенесут вас прямо в итальянскую сельскую местность.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Menu Section -->
+    <section id="menu" class="menu">
+        <div class="container">
+            <h2 class="section-title">Фирменные блюда</h2>
+            <div class="menu-grid">
+                <!-- Menu Card 1 -->
+                <div class="menu-card">
+                    <div class="menu-card-inner">
+                        <div class="menu-card-front">
+                            <div class="menu-img" style="background-image: url('https://images.unsplash.com/photo-1608755252661-1f8a1a3a2b2f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');"></div>
+                            <div class="menu-info">
+                                <h3 class="menu-name">Равиоли с трюфелем</h3>
+                                <div class="menu-price">€24</div>
+                                <button class="view-details">Подробнее</button>
+                            </div>
+                        </div>
+                        <div class="menu-card-back">
+                            <div>
+                                <h3 class="menu-details-title">Равиоли с трюфелем</h3>
+                                <p class="menu-details-desc">Домашние паста-карманы, наполненные рикоттой и черным трюфелем, подаются в нежном масляно-шалфейном соусе. Роскошное блюдо, воплощающее сущность итальянской высокой кухни.</p>
+                                <div class="ingredients">
+                                    <h4>Ингредиенты</h4>
+                                    <div class="ingredients-list">
+                                        <span class="ingredient">Свежая паста</span>
+                                        <span class="ingredient">Рикотта</span>
+                                        <span class="ingredient">Черный трюфель</span>
+                                        <span class="ingredient">Масло</span>
+                                        <span class="ingredient">Шалфей</span>
+                                        <span class="ingredient">Пармиджано</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="close-details">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 6L6 18M6 6l12 12"></path>
+                                </svg>
+                                Закрыть
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Menu Card 2 -->
+                <div class="menu-card">
+                    <div class="menu-card-inner">
+                        <div class="menu-card-front">
+                            <div class="menu-img" style="background-image: url('https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');"></div>
+                            <div class="menu-info">
+                                <h3 class="menu-name">Лингвини с морепродуктами</h3>
+                                <div class="menu-price">€28</div>
+                                <button class="view-details">Подробнее</button>
+                            </div>
+                        </div>
+                        <div class="menu-card-back">
+                            <div>
+                                <h3 class="menu-details-title">Лингвини с морепродуктами</h3>
+                                <p class="menu-details-desc">Свежие лингвини с ассорти морепродуктов Адриатики в легком томатном соусе на белом вине. Креветки, мидии, кальмары и моллюски в гармоничном сочетании.</p>
+                                <div class="ingredients">
+                                    <h4>Ингредиенты</h4>
+                                    <div class="ingredients-list">
+                                        <span class="ingredient">Лингвини</span>
+                                        <span class="ingredient">Креветки</span>
+                                        <span class="ingredient">Мидии</span>
+                                        <span class="ingredient">Кальмары</span>
+                                        <span class="ingredient">Томатный соус</span>
+                                        <span class="ingredient">Белое вино</span>
+                                        <span class="ingredient">Чеснок</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="close-details">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 6L6 18M6 6l12 12"></path>
+                                </svg>
+                                Закрыть
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Menu Card 3 -->
+                <div class="menu-card">
+                    <div class="menu-card-inner">
+                        <div class="menu-card-front">
+                            <div class="menu-img" style="background-image: url('https://images.unsplash.com/photo-1612528443702-f6741f70a049?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');"></div>
+                            <div class="menu-info">
+                                <h3 class="menu-name">Оссобуко</h3>
+                                <div class="menu-price">€32</div>
+                                <button class="view-details">Подробнее</button>
+                            </div>
+                        </div>
+                        <div class="menu-card-back">
+                            <div>
+                                <h3 class="menu-details-title">Оссобуко</h3>
+                                <p class="menu-details-desc">Тушеная телячья голяшка в миланском стиле, приготовленная до совершенства в насыщенном овощном соусе на белом вине, подается с шафрановым ризотто. Вечная классика итальянской кухни.</p>
+                                <div class="ingredients">
+                                    <h4>Ингредиенты</h4>
+                                    <div class="ingredients-list">
+                                        <span class="ingredient">Телячья голяшка</span>
+                                        <span class="ingredient">Морковь</span>
+                                        <span class="ingredient">Сельдерей</span>
+                                        <span class="ingredient">Лук</span>
+                                        <span class="ingredient">Белое вино</span>
+                                        <span class="ingredient">Томаты</span>
+                                        <span class="ingredient">Ризотто</span>
+                                        <span class="ingredient">Шафран</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="close-details">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 6L6 18M6 6l12 12"></path>
+                                </svg>
+                                Закрыть
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Menu Card 4 -->
+                <div class="menu-card">
+                    <div class="menu-card-inner">
+                        <div class="menu-card-front">
+                            <div class="menu-img" style="background-image: url('https://images.unsplash.com/photo-1606491956689-2ea866880c84?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');"></div>
+                            <div class="menu-info">
+                                <h3 class="menu-name">Салат с бурратой</h3>
+                                <div class="menu-price">€18</div>
+                                <button class="view-details">Подробнее</button>
+                            </div>
+                        </div>
+                        <div class="menu-card-back">
+                            <div>
+                                <h3 class="menu-details-title">Салат с бурратой</h3>
+                                <p class="menu-details-desc">Сливочный сыр буррата подается с помидорами семейной реликвии, свежим базиликом и каплями оливкового масла холодного отжима. Простая, но изысканная закуска, прославляющая свежие ингредиенты.</p>
+                                <div class="ingredients">
+                                    <h4>Ингредиенты</h4>
+                                    <div class="ingredients-list">
+                                        <span class="ingredient">Сыр буррата</span>
+                                        <span class="ingredient">Помидоры семейной реликвии</span>
+                                        <span class="ingredient">Свежий базилик</span>
+                                        <span class="ingredient">Оливковое масло</span>
+                                        <span class="ingredient">Бальзамический крем</span>
+                                        <span class="ingredient">Морская соль</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="close-details">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 6L6 18M6 6l12 12"></path>
+                                </svg>
+                                Закрыть
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Menu Card 5 -->
+                <div class="menu-card">
+                    <div class="menu-card-inner">
+                        <div class="menu-card-front">
+                            <div class="menu-img" style="background-image: url('https://images.unsplash.com/photo-1571877227200-a0d0c5e30448?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');"></div>
+                            <div class="menu-info">
+                                <h3 class="menu-name">Тирамису</h3>
+                                <div class="menu-price">€12</div>
+                                <button class="view-details">Подробнее</button>
+                            </div>
+                        </div>
+                        <div class="menu-card-back">
+                            <div>
+                                <h3 class="menu-details-title">Тирамису</h3>
+                                <p class="menu-details-desc">Наш фирменный десерт: слои савоярди, пропитанные эспрессо, и воздушный крем маскарпоне, посыпанные какао-пудрой. Идеальное завершение вашего итальянского пира.</p>
+                                <div class="ingredients">
+                                    <h4>Ингредиенты</h4>
+                                    <div class="ingredients-list">
+                                        <span class="ingredient">Савоярди</span>
+                                        <span class="ingredient">Маскарпоне</span>
+                                        <span class="ingredient">Эспрессо</span>
+                                        <span class="ingredient">Яйца</span>
+                                        <span class="ingredient">Сахар</span>
+                                        <span class="ingredient">Какао-порошок</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="close-details">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 6L6 18M6 6l12 12"></path>
+                                </svg>
+                                Закрыть
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Menu Card 6 -->
+                <div class="menu-card">
+                    <div class="menu-card-inner">
+                        <div class="menu-card-front">
+                            <div class="menu-img" style="background-image: url('https://images.unsplash.com/photo-1606491956698-2ea6a7ceca5f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');"></div>
+                            <div class="menu-info">
+                                <h3 class="menu-name">Ризотто с грибами</h3>
+                                <div class="menu-price">€22</div>
+                                <button class="view-details">Подробнее</button>
+                            </div>
+                        </div>
+                        <div class="menu-card-back">
+                            <div>
+                                <h3 class="menu-details-title">Ризотто с грибами</h3>
+                                <p class="menu-details-desc">Кремовый рис арборио, медленно приготовленный с отборными лесными грибами, белым вином и завершенный пармезаном. Уютное блюдо с землистыми ароматами.</p>
+                                <div class="ingredients">
+                                    <h4>Ингредиенты</h4>
+                                    <div class="ingredients-list">
+                                        <span class="ingredient">Рис арборио</span>
+                                        <span class="ingredient">Лесные грибы</span>
+                                        <span class="ingredient">Пармезан</span>
+                                        <span class="ingredient">Белое вино</span>
+                                        <span class="ingredient">Овощной бульон</span>
+                                        <span class="ingredient">Лук</span>
+                                        <span class="ingredient">Масло</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="close-details">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 6L6 18M6 6l12 12"></path>
+                                </svg>
+                                Закрыть
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section id="gallery" class="gallery">
+        <div class="container">
+            <h2 class="section-title">Наша галерея</h2>
+            <div class="masonry-grid">
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" alt="Элегантный обеденный зал с мраморными столами и хрустальными люстрами">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" alt="Изготовление свежей пасты">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" alt="Обширная коллекция итальянских вин">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1564759077034-936b00f9e0ac?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" alt="Ассортимент итальянских десертов">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1601924994987-69e26d50dc26?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" alt="Терраса для ужина на открытом воздухе с видом на город">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1554679665-f5537f187268?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" alt="Фирменное блюдо шеф-повара">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1578474846511-04ba439f0df5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" alt="Элегантный бар с премиальными напитками">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1544025162-d76694265947?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" alt="Отборные свежие ингредиенты">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Lightbox -->
+    <div class="lightbox">
+        <div class="close-lightbox">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <path d="M18 6L6 18M6 6l12 12"></path>
+            </svg>
+        </div>
+        <div class="lightbox-content">
+            <img src="" alt="">
+        </div>
+    </div>
+
+    <!-- Location Section -->
+    <section id="location" class="location">
+        <div id="map"></div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <p class="portfolio-credit">Разработано Culinary Portfolio Pro</p>
+        </div>
+    </footer>
+
+    <!-- Contact Buttons -->
+    <div class="contact-buttons">
+        <a href="https://wa.me/+79119396075" class="contact-button whatsapp" target="_blank">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="#25D366" stroke="none">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+        </a>
+        <a href="https://t.me/ramashery" class="contact-button telegram" target="_blank">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="#0088cc" stroke="none">
+                <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.14.141-.259.259-.374.261l.213-3.053 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.136-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/>
+            </svg>
+        </a>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // DOM Content Loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hero text reveal animation
+            const titleLetters = document.querySelectorAll('.hero-title span');
+            titleLetters.forEach((letter, index) => {
+                letter.style.setProperty('--i', index + 1);
+            });
+            
+            // Menu card flip functionality
+            const menuCards = document.querySelectorAll('.menu-card');
+            menuCards.forEach(card => {
+                const viewBtn = card.querySelector('.view-details');
+                const closeBtn = card.querySelector('.close-details');
+                
+                viewBtn.addEventListener('click', () => {
+                    card.querySelector('.menu-card-inner').style.transform = 'rotateY(180deg)';
+                });
+                
+                closeBtn.addEventListener('click', () => {
+                    card.querySelector('.menu-card-inner').style.transform = 'rotateY(0)';
+                });
+            });
+            
+            // Gallery lightbox
+            const galleryItems = document.querySelectorAll('.gallery-item');
+            const lightbox = document.querySelector('.lightbox');
+            const lightboxImg = lightbox.querySelector('img');
+            const closeLightbox = lightbox.querySelector('.close-lightbox');
+            
+            galleryItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const imgSrc = item.querySelector('img').src;
+                    lightboxImg.src = imgSrc;
+                    lightbox.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                });
+            });
+            
+            closeLightbox.addEventListener('click', () => {
+                lightbox.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            });
+            
+            // Initialize map
+            const map = L.map('map').setView([41.699, 44.794], 17);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            L.marker([41.699, 44.794]).addTo(map)
+                .bindPopup('Aquarella<br>Улица Шота Руставели, 17, Тбилиси')
+                .openPopup();
+            
+            // Navigation scroll effect
+            window.addEventListener('scroll', () => {
+                const nav = document.querySelector('nav');
+                if (window.scrollY > 100) {
+                    nav.classList.add('scrolled');
+                } else {
+                    nav.classList.remove('scrolled');
+                }
+            });
+            
+            // Smooth scrolling for navigation
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        window.scrollTo({
+                            top: target.offsetTop - 80,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+            
+            // Parallax effect for hero
+            window.addEventListener('scroll', () => {
+                const scrollPosition = window.pageYOffset;
+                const heroBg = document.querySelector('.hero-bg');
+                heroBg.style.transform = `scale(${1 + scrollPosition * 0.0005})`;
+            });
+            
+            // Intersection Observer for animations
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.1
+            };
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('appear');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+            
+            document.querySelectorAll('.about-content').forEach(section => {
+                observer.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>
